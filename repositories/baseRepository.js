@@ -1,5 +1,5 @@
-import { dbAdapter } from "../config/db.js";
-import { v4 } from "uuid";
+const { dbAdapter } = require('../config/db');
+const { v4 } = require('uuid');
 
 class BaseRepository {
   constructor(collectionName) {

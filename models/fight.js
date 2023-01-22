@@ -1,4 +1,4 @@
-const FIGHT = {
+exports. fight = {
   id: "",
   fighter1: "id",
   fighter2: "id",

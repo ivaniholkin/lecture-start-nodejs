@@ -9,6 +9,7 @@ router.post(
   (req, res, next) => {
     try {
       // TODO: Implement login action (get the user if it exist with entered credentials)
+      const data = AuthService.login({email: req.body.email, password:req.body.password})
       res.data = data;
     } catch (err) {
       res.err = err;
@@ -19,4 +20,4 @@ router.post(
   responseMiddleware
 );
 
-export { router };
+module.exports = router;

@@ -1,17 +1,54 @@
-import { userRepository } from "../repositories/userRepository.js";
+const { UserRepository } = require('../repositories/userRepository');
+const { user } = require('../models/user');
 
 class UserService {
-  // TODO: Implement methods to work with user
 
-  search(search) {
-    const item = userRepository.getOne(search);
-    if (!item) {
-      return null;
+
+
+    getAll(){
+        return UserRepository.getAll()
     }
-    return item;
-  }
+
+    create(item){
+        const data = {
+            firstName: item.firstName,
+            lastName: item.lastName,
+            email: item.email,
+            phoneNumber: item.phoneNumber,
+            password: item.password
+        }
+
+        const userEmail = this.search({email: item.email})
+        const userPhoneNumber = this.search({phoneNumber: item.phoneNumber})
+
+        if (userEmail || userPhoneNumber ){
+            return null
+        }else {
+            return UserRepository.create(data)
+        }
+    }
+
+    update(id, dataToUpdate){
+        const user = this.search({id:id})
+        if(user){
+            return UserRepository.update(id,dataToUpdate)
+
+        }else {
+            return null
+        }
+    }
+
+    delete(id){
+        return UserRepository.delete(id)
+    }
+
+    search(search) {
+        const item = UserRepository.getOne(search);
+        if(!item) {
+            return null;
+        }
+        return item;
+    }
 }
 
-const userService = new UserService();
-
-export { userService };
+module.exports = new UserService();

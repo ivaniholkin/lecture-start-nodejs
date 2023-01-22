@@ -1,4 +1,4 @@
-import { userService } from "./userService.js";
+const UserService = require('./userService');
 
 class AuthService {
   login(userData) {
