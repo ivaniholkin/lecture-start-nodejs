@@ -28,5 +28,16 @@
   "engines": {
     "node": "16.x.x",
     "npm": "8.x.x"
+  },
+  "devDependencies": {
+      "nodemon": "^2.0.20"
+  },
+  "nodemonConfig": {
+      "ext": "js",
+      "ignore": [
+          "*.test.ts",
+          "db/*"
+      ],
+      "delay": "2"
   }
 }

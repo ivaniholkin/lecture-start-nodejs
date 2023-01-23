@@ -1,50 +1,68 @@
-const { FighterRepository } = require('../repositories/fighterRepository');
+import { fighterRepository } from '../repositories/fighterRepository.js';
 
 class FighterService {
+  // TODO: Implement methods to work with fighters
+  addFighter(data) {
+      const item = fighterRepository.create(data);
+      if (!item) {
+          return null;
+      }
+      return item;
+  }
 
+  updateFighter(id, dataToUpdate) {
+      const item = fighterRepository.update(id, dataToUpdate);
 
-    getAll(){
-        return FighterRepository.getAll()
-    }
+      if (!item) {
+          return null;
+      }
+      return item;
+  }
 
-    create(item){
-        const data = {
-            name: item.name,
-            health: item.health || 100,
-            power: item.power,
-            defense: item.defense,
-        }
+  removeFighter(id) {
+      const item = fighterRepository.delete(id);
 
-        const fighterName = this.search({name: item.name})
+      if (item.length < 1) {
+          return null;
+      }
+      return item;
+  }
 
-        if (fighterName ){
-            return null
-        }else {
-            return FighterRepository.create(data)
-        }
-    }
-
-    update(id, dataToUpdate){
-        const fighter = this.search({id:id})
-        if(fighter){
-            return FighterRepository.update(id,dataToUpdate)
-
-        }else {
-            return null
-        }
-    }
-
-    delete(id){
-        return FighterRepository.delete(id)
-    }
-
-    search(search) {
-        const item = FighterRepository.getOne(search);
-        if(!item) {
-            return null;
-        }
-        return item;
-    }
+  trimAndLowercaseData(str) {
+      const item = str.trim().toLowerCase();
+      if (!item) {
+          return null;
+      }
+      return item;
+  }
+  searchFighter(search) {
+      const item = fighterRepository.getOne(search);
+      if (!item) {
+          return null;
+      }
+      return item;
+  }
+  getAllFighters() {
+      const item = fighterRepository.getAll();
+      if (!item) {
+          return null;
+      }
+      return item;
+  }
+  checkKeyInModel(model, object) {
+      for (const key in object) {
+          if (Object.hasOwnProperty.call(object, key)) {
+              if (key === 'id') {
+                  continue;
+              }
+              if (!(key in model)) {
+                  throw new Error(`there ara no such ${key} in Model of use`);
+              }
+          }
+      }
+  }
 }
 
-module.exports = new FighterService();
+const fighterService = new FighterService();
+
+export { fighterService };

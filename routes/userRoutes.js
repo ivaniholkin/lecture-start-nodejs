@@ -1,62 +1,160 @@
-const { Router } = require('express');
-const UserService = require('../services/userService');
-const { createUserValid, updateUserValid } = require('../middlewares/user.validation.middleware');
-const { responseMiddleware } = require('../middlewares/response.middleware');
+import { Router } from 'express';
+import { userService } from '../services/userService.js';
+import {
+    createUserValid,
+    updateUserValid,
+} from '../middlewares/user.validation.middleware.js';
+import { responseMiddleware } from '../middlewares/response.middleware.js';
 
 const router = Router();
 
+// TODO: Implement route controllers for user
 
-router.get('/',
-    function (req,res,next){
-    const result = UserService.getAll()
-    res.send(result)
-
-})
-
-router.get('/:id',
-    function (req,res,next){
-        const UserId = req.params.id
-        const result = UserService.search({id:UserId})
-        if(result) {
-            res.send(result)
-        }else {
-            res.status(404).send("User not found")
+router.get(
+    '/',
+    (req, res, next) => {
+        try {
+            const users = userService.getAllUsers();
+            if (users) {
+                req.body = {
+                    users,
+                };
+                return req.body;
+            }
+        } catch ({ message }) {
+            return (req.body = {
+                error: true,
+                message,
+            });
+        } finally {
+            next();
         }
-    })
+    },
 
+    responseMiddleware
+);
 
-router.post('/',
+router.get(
+    '/:id',
+    (req, res, next) => {
+        let id = req.params.id;
+        try {
+            const user = userService.getOneUser({
+                id,
+            });
+            if (user) {
+                req.body = {
+                    ...user,
+                };
+                return req.body;
+            } else {
+                throw new Error(`The User with id: ${id} does not exist`);
+            }
+        } catch ({ message }) {
+            return (req.body = {
+                error: true,
+                message,
+            });
+        } finally {
+            next();
+        }
+    },
+    responseMiddleware
+);
+
+router.post(
+    '/',
     createUserValid,
-    function (req,res,next){
+    (req, res, next) => {
+        try {
+            const { error, message } = req.body;
+            if (error) {
+                throw new Error(message);
+            }
+            const { email, phoneNumber } = req.body;
+            const isUserPresentInDBbyEmail = userService.getOneUser({
+                email,
+            });
+            const isUserPresentInDBbyPhone = userService.getOneUser({
+                phoneNumber,
+            });
 
-        const result = UserService.create(req.body)
-        if (result) {
-            res.status(200).send(result)
-        }else {
-            res.status(400).send("User exist")
-
+            if (!isUserPresentInDBbyEmail && !isUserPresentInDBbyPhone) {
+                const users = userService.addUser(req.body);
+                req.body = {
+                    users,
+                };
+                return req.body;
+            } else {
+                throw new Error('user already present in database');
+            }
+        } catch ({ message }) {
+            return (req.body = {
+                error: true,
+                message,
+            });
+        } finally {
+            next();
         }
-    })
+    },
+    responseMiddleware
+);
 
-router.put('/:id',
+router.put(
+    '/:id',
     updateUserValid,
-    function (req,res,next){
-
-        const result =UserService.update(req.params.id,req.body)
-
-        if(result) {
-            res.send(result)
-        }else {
-            res.status(404).send("User not found")
+    (req, res, next) => {
+        let id = req.params.id;
+        const { error, message } = req.body;
+        try {
+            if (error) {
+                throw new Error(message);
+            }
+            const user = userService.updateUser(id, req.body);
+            if (user) {
+                req.body = {
+                    ...user,
+                };
+                return req.body;
+            } else {
+                throw new Error(`The User with id: ${id} does not exist in DB`);
+            }
+        } catch ({ message }) {
+            return (req.body = {
+                error: true,
+                message,
+            });
+        } finally {
+            next();
         }
+    },
+    responseMiddleware
+);
 
-    })
+router.delete(
+    '/:id',
+    (req, res, next) => {
+        let id = req.params.id;
+        try {
+            const user = userService.removeUser(id);
+            if (user) {
+                req.body = {
+                    user,
+                };
+                return req.body;
+            } else {
+                throw new Error(`The User with id: ${id} does not exist in DB`);
+            }
+        } catch ({ message }) {
+            return (req.body = {
+                error: true,
+                message,
+            });
+        } finally {
+            next();
+        }
+    },
 
-router.delete('/:id',
-    function (req,res,next){
-
-        res.send(UserService.delete(req.params.id))
-
-    })
-
-module.exports = router;
+    responseMiddleware
+);
+export { router };

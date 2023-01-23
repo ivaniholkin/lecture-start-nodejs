@@ -1,58 +1,109 @@
-const {user} = require('../models/user');
+import { USER } from '../models/user.js';
+import { userService } from '../services/userService.js';
+import { getUserAgent } from '../utils/userAgent.js';
 
-const reGmail = /.+@(gmail)\.com$/;
-const rePhoneNumber = /^(\+380)?([ 0-9]){9}$/
-const rePassword = /\d*(?:[0-9a-zA-Z$&%?#/@!*+-]){3,}\d*/
+const GMAIL_REGEXP = new RegExp(/^([a-zA-Z0-9_\-\.]+)@(gmail+)\.(com)$/, 'g');
+const PHONE_REGEXP = new RegExp(
+    /(\+38)?\(?\d{3}\)?[\s\.-]?(\d{7}|\d{3}[\s\.-]\d{2}[\s\.-]\d{2}|\d{3}-\d{4})/,
+    'g'
+);
 
 const createUserValid = (req, res, next) => {
-    const reqUser = {
-        firstName: req.body.firstName,
-        lastName: req.body.lastName,
-        email: req.body.email,
-        phoneNumber: req.body.phoneNumber,
-        password: req.body.password
-    }
-
-    if (!req.body.firstName || !req.body.lastName || !req.body.email || !req.body.phoneNumber || !req.body.password) {
-        res.status(400).send("all fields must be filled")
-    } else {
-        if (JSON.stringify(reqUser) == JSON.stringify(req.body)) {
-
-            if (reGmail.test(req.body.email)) {
-                if (rePhoneNumber.test(req.body.phoneNumber)) {
-                    if (rePassword.test(req.body.password)) {
-                        next()
-                    } else {
-
-                        res.status(400).send("Password must be 3 and more")
-                    }
-                } else {
-                    res.status(400).send("phone number must be +380xxxxxxxxx")
-                }
-
-
-            } else {
-                res.status(400).send("email must be only gmail")
-            }
-
-
-        } else {
-            res.status(400).send("added extra fields")
-
+    // TODO: Implement validatior for USER entity during creation
+    try {
+        let userAgent = getUserAgent(
+            req.headers['user-agent'],
+            'PostmanRuntime/7.30.0',
+            req
+        );
+        userService.checkKeyInModel(USER, userAgent);
+        const { firstName, lastName, email, phoneNumber, password } = userAgent;
+        console.log('firstName', firstName);
+        if (!firstName) {
+            throw new Error(`Validation failed. First name is empty`);
+        }
+        if (!lastName) {
+            throw new Error(`Validation failed. Last name is empty`);
+        }
+        if (!phoneNumber) {
+            throw new Error(`validation failed. Phone number is empty`);
+        }
+        if (!PHONE_REGEXP.test(phoneNumber)) {
+            throw new Error(`validation failed. Phone number is incorrect `);
+        }
+        if (!email) {
+            throw new Error(`validation failed. Email is empty`);
+        }
+        if (!GMAIL_REGEXP.test(email)) {
+            throw new Error(`validation failed. Email is incorrect`);
+        }
+        if (!password) {
+            throw new Error(`validation failed. Password is empty`);
+        }
+        if (password.length < 3) {
+            throw new Error(`validation failed. Password is too short`);
         }
 
+        const user = {
+            firstName: userService.trimAndLowercaseData(firstName),
+            lastName: userService.trimAndLowercaseData(lastName),
+            email,
+            phoneNumber,
+            password,
+        };
+        return (req.body = user);
+    } catch ({ message }) {
+        req.body = {
+            error: true,
+            message,
+        };
+        return req.body;
+    } finally {
+        next();
     }
-}
+};
 
 const updateUserValid = (req, res, next) => {
-    if (req.body.firstName || req.body.lastName || req.body.email || req.body.phoneNumber || req.body.password) {
+    // TODO: Implement validatior for user entity during update
+    try {
+        let userAgent = getUserAgent(
+            req.headers['user-agent'],
+            'PostmanRuntime/7.30.0',
+            req
+        );
+        const { firstName, lastName, email, phoneNumber, password } = userAgent;
+        console.log(firstName);
+        if (!firstName && !lastName && !email && !phoneNumber && !password) {
+            throw new Error(
+                `Validation failed. At least one field from the model must be present`
+            );
+        } else {
+            userService.checkKeyInModel(USER, userAgent);
+            if (email && !GMAIL_REGEXP.test(email)) {
+                throw new Error(`validation failed. Email is incorrect`);
+            }
+            if (phoneNumber && !PHONE_REGEXP.test(phoneNumber)) {
+                throw new Error(
+                    `validation failed. Phone number is incorrect `
+                );
+            }
+            if (password && password.length < 3) {
+                throw new Error(`validation failed. Password is too short`);
+            }
+            const user = {
+                ...userAgent,
+            };
+            return (req.body = user);
+        }
+    } catch ({ message }) {
+        req.body = {
+            error: true,
+            message,
+        };
+        return req.body;
+    } finally {
         next();
-
     }
-    else {
-        res.status(400).send("When updating the user - there must be at least one field")
-    }
-}
+};
 
-exports.createUserValid = createUserValid;
-exports.updateUserValid = updateUserValid;
+export { createUserValid, updateUserValid };

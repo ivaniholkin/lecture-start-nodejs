@@ -1,4 +1,4 @@
-exports. fighter = {
+const FIGHTER = {
   id: "",
   name: "",
   health: 100,

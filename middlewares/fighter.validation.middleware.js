@@ -1,60 +1,112 @@
-const {fighter} = require('../models/fighter');
+import { FIGHTER } from '../models/fighter.js';
+import { fighterService } from '../services/fighterService.js';
+import { getUserAgent } from '../utils/userAgent.js';
 
 const createFighterValid = (req, res, next) => {
-  // TODO: Implement validatior for FIGHTER entity during creation
-  const reqFighter = {
-    name: req.body.name,
-    power: req.body.power,
-    defense: req.body.defense,
-}
-const reqFighter1 = {
-    name: req.body.name,
-    health: req.body.health,
-    power: req.body.power,
-    defense: req.body.defense,
-}
+    // TODO: Implement validatior for FIGHTER entity during creation
+    try {
+        let userAgent = getUserAgent(
+            req.headers['user-agent'],
+            'PostmanRuntime/7.30.0',
+            req
+        );
+        fighterService.checkKeyInModel(FIGHTER, userAgent);
 
-
-if (!req.body.name || !req.body.power || !req.body.defense) {
-    res.status(400).send("all fields must be filled")
-} else {
-    if (JSON.stringify(reqFighter) == JSON.stringify(req.body) || JSON.stringify(reqFighter1) == JSON.stringify(req.body)) {
-
-        if (req.body.defense <= 100 && req.body.defense >= 1) {
-            if (req.body.power <= 100 && req.body.power >= 1) {
-                if ((req.body.health <= 120 && req.body.health >= 80) || !req.body.health) {
-                    next()
-                } else {
-                    res.status(400).send("health - 80 < health < 120")
-                }
-
-            } else {
-                res.status(400).send("power - 1 < power < 100")
-            }
-
+        const { name, power, defense, health = 100 } = userAgent;
+        console.log(name);
+        if (!name) {
+            throw new Error(`Validation failed. Fighter name is empty`);
+        } else if (!power) {
+            throw new Error(`Validation failed. Fighter power is empty`);
+        } else if (power < 1) {
+            throw new Error(`Validation failed. Power must be greater than 1`);
+        } else if (power > 100) {
+            throw new Error(`validation failed. Power must be less than 100`);
+        } else if (!defense) {
+            throw new Error(`validation failed. Fighter defense is empty`);
+        } else if (defense < 1) {
+            throw new Error(
+                `validation failed. Defense must be greater than 1`
+            );
+        } else if (defense > 10) {
+            throw new Error(`validation failed. Defense must be less than 10`);
         } else {
-            res.status(400).send("defense - 1 < defense < 100")
-
+            const fighter = {
+                name,
+                power,
+                defense,
+                health,
+            };
+            return (req.body = fighter);
         }
-
-    } else {
-        res.status(400).send("added extra fields")
-
+    } catch ({ message }) {
+        req.body = {
+            error: true,
+            message,
+        };
+        return req.body;
+    } finally {
+        next();
     }
-
-}
-
-
 };
 
 const updateFighterValid = (req, res, next) => {
-  // TODO: Implement validatior for FIGHTER entity during update
-  if (req.body.name || req.body.power || req.body.health || req.body.defense) {
-  next();
-} else {
-  res.status(400).send("When updating the fighter - there must be at least one field")
-}
+    // TODO: Implement validatior for FIGHTER entity during update
+    try {
+        let userAgent = getUserAgent(
+            req.headers['user-agent'],
+            'PostmanRuntime/7.30.0',
+            req
+        );
+        const { name, power, defense, health = 100 } = userAgent;
+        if (!name && !power && !defense && !health) {
+            throw new Error(
+                `Validation failed. At least one field from the model must be present`
+            );
+        } else {
+            fighterService.checkKeyInModel(FIGHTER, userAgent);
+            if (power && power < 1) {
+                throw new Error(
+                    `Validation failed. Power must be greater than 1`
+                );
+            } else if (power && power > 100) {
+                throw new Error(
+                    `validation failed. Power must be less than 100`
+                );
+            } else if (defense && defense < 1) {
+                throw new Error(
+                    `validation failed. Defense must be greater than 1`
+                );
+            } else if (defense && defense > 10) {
+                throw new Error(
+                    `validation failed. Defense must be less than 10`
+                );
+            } else if (health && health > 12) {
+                throw new Error(
+                    `validation failed. Health must be less than 120`
+                );
+            } else if (health && health < 80) {
+                throw new Error(
+                    `validation failed. Health must be greater than 80`
+                );
+            } else {
+                const fighter = {
+                    name,
+                    power,
+                    defense,
+                };
+                return (req.body = fighter);
+            }
+        }
+    } catch ({ message }) {
+        req.body = {
+            error: true,
+            message,
+        };
+        return req.body;
+    } finally {
+        next();
+    }
 };
 
-exports.createFighterValid = createFighterValid;
-exports.updateFighterValid = updateFighterValid;
+export { createFighterValid, updateFighterValid };

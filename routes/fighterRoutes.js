@@ -1,62 +1,159 @@
-const { Router } = require('express');
-const FighterService = require('../services/fighterService');
-const { responseMiddleware } = require('../middlewares/response.middleware');
-const { createFighterValid, updateFighterValid } = require('../middlewares/fighter.validation.middleware');
+import { Router } from 'express';
+import { fighterService } from '../services/fighterService.js';
+import { responseMiddleware } from '../middlewares/response.middleware.js';
+import {
+    createFighterValid,
+    updateFighterValid,
+} from '../middlewares/fighter.validation.middleware.js';
 
 const router = Router();
+// TODO: Implement route controllers for fighter
 
-
-router.get('/',
-    function (req,res,next){
-        const result = FighterService.getAll()
-        res.send(result)
-
-    })
-
-router.get('/:id',
-    function (req,res,next){
-        const UserId = req.params.id
-        const result = FighterService.search({id:UserId})
-        if(result) {
-            res.send(result)
-        }else {
-            res.status(404).send("Fighter not found")
+router.get(
+    '/',
+    (req, res, next) => {
+        try {
+            const fighters = fighterService.getAllFighters();
+            if (fighters) {
+                req.body = {
+                    fighters,
+                };
+                return req.body;
+            }
+        } catch ({ message }) {
+            return (req.body = {
+                error: true,
+                message,
+            });
+        } finally {
+            next();
         }
-    })
+    },
 
+    responseMiddleware
+);
 
-router.post('/',
+router.get(
+    '/:id',
+    (req, res, next) => {
+        let id = req.params.id;
+        try {
+            const fighter = fighterService.searchFighter({
+                id,
+            });
+            if (fighter) {
+                req.body = {
+                    ...fighter,
+                };
+                return req.body;
+            } else {
+                throw new Error(`The Fighter with id: ${id} does not exist`);
+            }
+        } catch ({ message }) {
+            return (req.body = {
+                error: true,
+                message,
+            });
+        } finally {
+            next();
+        }
+    },
+    responseMiddleware
+);
+router.post(
+    '/',
     createFighterValid,
-    function (req,res,next){
-
-        const result = FighterService.create(req.body)
-        if (result) {
-            res.status(200).send(result)
-        }else {
-            res.status(400).send("Fighter exist")
-
+    (req, res, next) => {
+        try {
+            const { error, message } = req.body;
+            if (error) {
+                throw new Error(message);
+            }
+            const { name } = req.body;
+            const currentFighter = fighterService.searchFighter({
+                name: name.toLowerCase(),
+            });
+            if (!currentFighter) {
+                const fighter = fighterService.addFighter({
+                    ...req.body,
+                    name: name.toLowerCase(),
+                });
+                req.body = {
+                    ...fighter,
+                };
+                return req.body;
+            } else {
+                throw new Error('The fighter already present in the database');
+            }
+        } catch ({ message }) {
+            return (req.body = {
+                error: true,
+                message,
+            });
+        } finally {
+            next();
         }
-    })
+    },
 
-router.put('/:id',
+    responseMiddleware
+);
+
+router.put(
+    '/:id',
     updateFighterValid,
-    function (req,res,next){
-
-        const result = FighterService.update(req.params.id,req.body)
-
-        if(result) {
-            res.send(result)
-        }else {
-            res.status(404).send("Fighter not found")
+    (req, res, next) => {
+        let id = req.params.id;
+        const { error, message } = req.body;
+        try {
+            if (error) {
+                throw new Error(message);
+            }
+            const fighter = fighterService.updateFighter(id, req.body);
+            if (fighter) {
+                req.body = {
+                    ...fighter,
+                };
+                return req.body;
+            } else {
+                throw new Error(`The Fighter with id: ${id} does not exist`);
+            }
+        } catch ({ message }) {
+            return (req.body = {
+                error: true,
+                message,
+            });
+        } finally {
+            next();
         }
+    },
+    responseMiddleware
+);
 
-    })
+router.delete(
+    '/:id',
+    (req, res, next) => {
+        let id = req.params.id;
+        try {
+            const fighter = fighterService.removeFighter(id);
+            if (fighter) {
+                req.body = {
+                    fighter,
+                };
+                return req.body;
+            } else {
+                throw new Error(`The Fighter with id: ${id} does not exist`);
+            }
+        } catch ({ message }) {
+            return (req.body = {
+                error: true,
+                message,
+            });
+        } finally {
+            next();
+        }
+    },
 
-router.delete('/:id',
-    function (req,res,next){
+    responseMiddleware
+);
 
-        res.send(FighterService.delete(req.params.id))
-
-    })
-
-module.exports = router;
+export { router };

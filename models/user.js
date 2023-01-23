@@ -1,4 +1,4 @@
-exports.user = {
+const USER = {
   id: "",
   firstName: "",
   lastName: "",
